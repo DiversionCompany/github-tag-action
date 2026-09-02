@@ -16,10 +16,13 @@ import { createTag } from './github';
 import { Await } from './ts';
 
 export default async function main() {
-  const defaultBump = core.getInput('default_bump') as ReleaseType | 'false';
-  const defaultPreReleaseBump = core.getInput('default_prerelease_bump') as
-    | ReleaseType
-    | 'false';
+  const defaultBump = core.getInput('default_bump') as ReleaseType;
+  if (!['major', 'minor', 'patch'].includes(defaultBump)) {
+    core.setFailed(
+      `default_bump must be major, minor or patch, got '${defaultBump}'.`
+    );
+    return;
+  }
   const tagPrefix = core.getInput('tag_prefix');
   const customTag = core.getInput('custom_tag');
   const releaseBranches = core.getInput('release_branches');
@@ -118,9 +121,9 @@ export default async function main() {
     );
     core.setOutput('previous_version', previousVersion.version);
     core.setOutput('previous_tag', previousTag.name);
-    core.setOutput('release_type', 'patch');
+    core.setOutput('release_type', defaultBump);
 
-    const incrementedVersion = inc(previousVersion, 'patch');
+    const incrementedVersion = inc(previousVersion, defaultBump);
 
     if (!incrementedVersion) {
       core.setFailed('Could not increment version.');
