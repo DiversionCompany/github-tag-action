@@ -96,124 +96,18 @@ describe('github-tag-action', () => {
       );
       expect(mockSetFailed).not.toBeCalled();
     });
+  });
 
-    it('does not create tag without commits and default_bump set to false', async () => {
-      /*
-       * Given
-       */
-      setInput('default_bump', 'false');
-      const commits: any[] = [];
-      jest
-        .spyOn(utils, 'getCommits')
-        .mockImplementation(async (sha) => commits);
+  describe('special cases', () => {
+    it('does fail on an unknown default_bump', async () => {
+      setInput('default_bump', 'prerelease');
 
-      const validTags = [
-        {
-          name: 'v1.2.3',
-          commit: { sha: '012345', url: '' },
-          zipball_url: '',
-          tarball_url: 'string',
-          node_id: 'string',
-        },
-      ];
-      jest
-        .spyOn(utils, 'getValidTags')
-        .mockImplementation(async () => validTags);
-
-      /*
-       * When
-       */
       await action();
 
-      /*
-       * Then
-       */
       expect(mockCreateTag).not.toBeCalled();
-      expect(mockSetFailed).not.toBeCalled();
-    });
-
-    it('does create tag using custom release types', async () => {
-      /*
-       * Given
-       */
-      setInput('custom_release_rules', 'james:patch,bond:major');
-      const commits = [
-        { message: 'james: is the new cool guy', hash: null },
-        { message: 'bond: is his last name', hash: null },
-      ];
-      jest
-        .spyOn(utils, 'getCommits')
-        .mockImplementation(async (sha) => commits);
-
-      const validTags = [
-        {
-          name: 'v1.2.3',
-          commit: { sha: '012345', url: '' },
-          zipball_url: '',
-          tarball_url: 'string',
-          node_id: 'string',
-        },
-      ];
-      jest
-        .spyOn(utils, 'getValidTags')
-        .mockImplementation(async () => validTags);
-
-      /*
-       * When
-       */
-      await action();
-
-      /*
-       * Then
-       */
-      expect(mockCreateTag).toHaveBeenCalledWith(
-        'v2.0.0',
-        expect.any(Boolean),
-        expect.any(String)
+      expect(mockSetFailed).toBeCalledWith(
+        "default_bump must be major, minor or patch, got 'prerelease'."
       );
-      expect(mockSetFailed).not.toBeCalled();
-    });
-
-    it('does create tag using custom release types but non-custom commit message', async () => {
-      /*
-       * Given
-       */
-      setInput('custom_release_rules', 'james:patch,bond:major');
-      const commits = [
-        { message: 'fix: is the new cool guy', hash: null },
-        { message: 'feat: is his last name', hash: null },
-      ];
-      jest
-        .spyOn(utils, 'getCommits')
-        .mockImplementation(async (sha) => commits);
-
-      const validTags = [
-        {
-          name: 'v1.2.3',
-          commit: { sha: '012345', url: '' },
-          zipball_url: '',
-          tarball_url: 'string',
-          node_id: 'string',
-        },
-      ];
-      jest
-        .spyOn(utils, 'getValidTags')
-        .mockImplementation(async () => validTags);
-
-      /*
-       * When
-       */
-      await action();
-
-      /*
-       * Then
-       */
-      expect(mockCreateTag).toHaveBeenCalledWith(
-        'v1.3.0',
-        expect.any(Boolean),
-        expect.any(String)
-      );
-      expect(mockSetFailed).not.toBeCalled();
     });
   });
 
@@ -266,6 +160,7 @@ describe('github-tag-action', () => {
       /*
        * Given
        */
+      setInput('default_bump', 'minor');
       const commits = [
         { message: 'feat: this is my first feature', hash: null },
       ];
@@ -306,6 +201,7 @@ describe('github-tag-action', () => {
       /*
        * Given
        */
+      setInput('default_bump', 'major');
       const commits = [
         {
           message:
@@ -350,6 +246,7 @@ describe('github-tag-action', () => {
       /*
        * Given
        */
+      setInput('default_bump', 'minor');
       const commits = [
         { message: 'feat: some new feature on a release branch', hash: null },
       ];
@@ -394,357 +291,6 @@ describe('github-tag-action', () => {
        */
       expect(mockCreateTag).toHaveBeenCalledWith(
         'v2.2.0',
-        expect.any(Boolean),
-        expect.any(String)
-      );
-      expect(mockSetFailed).not.toBeCalled();
-    });
-
-    it('does create tag with custom release rules', async () => {
-      /*
-       * Given
-       */
-      setInput('custom_release_rules', 'james:preminor');
-      const commits = [
-        {
-          message: 'feat: some new feature on a pre-release branch',
-          hash: null,
-        },
-        { message: 'james: this should make a preminor', hash: null },
-      ];
-      jest
-        .spyOn(utils, 'getCommits')
-        .mockImplementation(async (sha) => commits);
-
-      const validTags = [
-        {
-          name: 'v1.2.3',
-          commit: { sha: '012345', url: '' },
-          zipball_url: '',
-          tarball_url: 'string',
-          node_id: 'string',
-        },
-      ];
-      jest
-        .spyOn(utils, 'getValidTags')
-        .mockImplementation(async () => validTags);
-
-      /*
-       * When
-       */
-      await action();
-
-      /*
-       * Then
-       */
-      expect(mockCreateTag).toHaveBeenCalledWith(
-        'v1.3.0',
-        expect.any(Boolean),
-        expect.any(String)
-      );
-      expect(mockSetFailed).not.toBeCalled();
-    });
-  });
-
-  describe('pre-release branches', () => {
-    beforeEach(() => {
-      jest.clearAllMocks();
-      setBranch('prerelease');
-      setInput('pre_release_branches', 'prerelease');
-    });
-
-    it('does not create tag without commits and default_bump set to false', async () => {
-      /*
-       * Given
-       */
-      setInput('default_prerelease_bump', 'false');
-      const commits: any[] = [];
-      jest
-        .spyOn(utils, 'getCommits')
-        .mockImplementation(async (sha) => commits);
-
-      const validTags = [
-        {
-          name: 'v1.2.3',
-          commit: { sha: '012345', url: '' },
-          zipball_url: '',
-          tarball_url: 'string',
-          node_id: 'string',
-        },
-      ];
-      jest
-        .spyOn(utils, 'getValidTags')
-        .mockImplementation(async () => validTags);
-
-      /*
-       * When
-       */
-      await action();
-
-      /*
-       * Then
-       */
-      expect(mockCreateTag).not.toBeCalled();
-      expect(mockSetFailed).not.toBeCalled();
-    });
-
-    it('does create prerelease tag', async () => {
-      /*
-       * Given
-       */
-      setInput('default_prerelease_bump', 'prerelease');
-      const commits = [{ message: 'this is my first fix', hash: null }];
-      jest
-        .spyOn(utils, 'getCommits')
-        .mockImplementation(async (sha) => commits);
-
-      const validTags = [
-        {
-          name: 'v1.2.3',
-          commit: { sha: '012345', url: '' },
-          zipball_url: '',
-          tarball_url: 'string',
-          node_id: 'string',
-        },
-      ];
-      jest
-        .spyOn(utils, 'getValidTags')
-        .mockImplementation(async () => validTags);
-
-      /*
-       * When
-       */
-      await action();
-
-      /*
-       * Then
-       */
-      expect(mockCreateTag).toHaveBeenCalledWith(
-        'v1.2.4-prerelease.0',
-        expect.any(Boolean),
-        expect.any(String)
-      );
-      expect(mockSetFailed).not.toBeCalled();
-    });
-
-    it('does create prepatch tag', async () => {
-      /*
-       * Given
-       */
-      const commits = [{ message: 'fix: this is my first fix', hash: null }];
-      jest
-        .spyOn(utils, 'getCommits')
-        .mockImplementation(async (sha) => commits);
-
-      const validTags = [
-        {
-          name: 'v1.2.3',
-          commit: { sha: '012345', url: '' },
-          zipball_url: '',
-          tarball_url: 'string',
-          node_id: 'string',
-        },
-      ];
-      jest
-        .spyOn(utils, 'getValidTags')
-        .mockImplementation(async () => validTags);
-
-      /*
-       * When
-       */
-      await action();
-
-      /*
-       * Then
-       */
-      expect(mockCreateTag).toHaveBeenCalledWith(
-        'v1.2.4-prerelease.0',
-        expect.any(Boolean),
-        expect.any(String)
-      );
-      expect(mockSetFailed).not.toBeCalled();
-    });
-
-    it('does create preminor tag', async () => {
-      /*
-       * Given
-       */
-      const commits = [
-        { message: 'feat: this is my first feature', hash: null },
-      ];
-      jest
-        .spyOn(utils, 'getCommits')
-        .mockImplementation(async (sha) => commits);
-
-      const validTags = [
-        {
-          name: 'v1.2.3',
-          commit: { sha: '012345', url: '' },
-          zipball_url: '',
-          tarball_url: 'string',
-          node_id: 'string',
-        },
-      ];
-      jest
-        .spyOn(utils, 'getValidTags')
-        .mockImplementation(async () => validTags);
-
-      /*
-       * When
-       */
-      await action();
-
-      /*
-       * Then
-       */
-      expect(mockCreateTag).toHaveBeenCalledWith(
-        'v1.3.0-prerelease.0',
-        expect.any(Boolean),
-        expect.any(String)
-      );
-      expect(mockSetFailed).not.toBeCalled();
-    });
-
-    it('does create premajor tag', async () => {
-      /*
-       * Given
-       */
-      const commits = [
-        {
-          message:
-            'my commit message\nBREAKING CHANGE:\nthis is a breaking change',
-          hash: null,
-        },
-      ];
-      jest
-        .spyOn(utils, 'getCommits')
-        .mockImplementation(async (sha) => commits);
-
-      const validTags = [
-        {
-          name: 'v1.2.3',
-          commit: { sha: '012345', url: '' },
-          zipball_url: '',
-          tarball_url: 'string',
-          node_id: 'string',
-        },
-      ];
-      jest
-        .spyOn(utils, 'getValidTags')
-        .mockImplementation(async () => validTags);
-
-      /*
-       * When
-       */
-      await action();
-
-      /*
-       * Then
-       */
-      expect(mockCreateTag).toHaveBeenCalledWith(
-        'v2.0.0-prerelease.0',
-        expect.any(Boolean),
-        expect.any(String)
-      );
-      expect(mockSetFailed).not.toBeCalled();
-    });
-
-    it('does create tag when release tag is newer', async () => {
-      /*
-       * Given
-       */
-      const commits = [
-        {
-          message: 'feat: some new feature on a pre-release branch',
-          hash: null,
-        },
-      ];
-      jest
-        .spyOn(utils, 'getCommits')
-        .mockImplementation(async (sha) => commits);
-
-      const validTags = [
-        {
-          name: 'v1.2.3-prerelease.0',
-          commit: { sha: '012345', url: '' },
-          zipball_url: '',
-          tarball_url: 'string',
-          node_id: 'string',
-        },
-        {
-          name: 'v3.1.2-feature.0',
-          commit: { sha: '012345', url: '' },
-          zipball_url: '',
-          tarball_url: 'string',
-          node_id: 'string',
-        },
-        {
-          name: 'v2.1.4',
-          commit: { sha: '234567', url: '' },
-          zipball_url: '',
-          tarball_url: 'string',
-          node_id: 'string',
-        },
-      ];
-      jest
-        .spyOn(utils, 'getValidTags')
-        .mockImplementation(async () => validTags);
-
-      /*
-       * When
-       */
-      await action();
-
-      /*
-       * Then
-       */
-      expect(mockCreateTag).toHaveBeenCalledWith(
-        'v2.2.0-prerelease.0',
-        expect.any(Boolean),
-        expect.any(String)
-      );
-      expect(mockSetFailed).not.toBeCalled();
-    });
-
-    it('does create tag with custom release rules', async () => {
-      /*
-       * Given
-       */
-      setInput('custom_release_rules', 'james:preminor');
-      const commits = [
-        {
-          message: 'feat: some new feature on a pre-release branch',
-          hash: null,
-        },
-        { message: 'james: this should make a preminor', hash: null },
-      ];
-      jest
-        .spyOn(utils, 'getCommits')
-        .mockImplementation(async (sha) => commits);
-
-      const validTags = [
-        {
-          name: 'v1.2.3',
-          commit: { sha: '012345', url: '' },
-          zipball_url: '',
-          tarball_url: 'string',
-          node_id: 'string',
-        },
-      ];
-      jest
-        .spyOn(utils, 'getValidTags')
-        .mockImplementation(async () => validTags);
-
-      /*
-       * When
-       */
-      await action();
-
-      /*
-       * Then
-       */
-      expect(mockCreateTag).toHaveBeenCalledWith(
-        'v1.3.0-prerelease.0',
         expect.any(Boolean),
         expect.any(String)
       );
@@ -799,6 +345,7 @@ describe('github-tag-action', () => {
       /*
        * Given
        */
+      setInput('default_bump', 'minor');
       const commits = [
         { message: 'feat: this is my first feature', hash: null },
       ];
@@ -836,6 +383,7 @@ describe('github-tag-action', () => {
       /*
        * Given
        */
+      setInput('default_bump', 'major');
       const commits = [
         {
           message:
